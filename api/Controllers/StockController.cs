@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using api.Data;
 using api.Dto.Stock;
 using api.Interfaces;
 using api.Mappers;
-using Azure;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers
 {
@@ -16,11 +9,9 @@ namespace api.Controllers
     [ApiController]
     public class StockController : ControllerBase
     {
-        private readonly ApplicationDBContext _context;
         private readonly IStockRepository _stockRepository;
-        public StockController(ApplicationDBContext context, IStockRepository stockRepository)
+        public StockController(IStockRepository stockRepository)
         {
-            _context = context;
             _stockRepository = stockRepository;
         }
 
@@ -50,8 +41,7 @@ namespace api.Controllers
         public async Task<IActionResult> Create([FromBody] CreateStockRequestDto stockDto)
         {
             var stockModel = stockDto.ToStockFromCreateDto();
-            await _context.Stocks.AddAsync(stockModel);
-            await _context.SaveChangesAsync();
+            stockModel = await _stockRepository.CreateAsync(stockModel);
 
             return CreatedAtAction(nameof(GetByeId), new { id = stockModel.Id }, stockModel.ToStockDto());
         }
@@ -59,19 +49,11 @@ namespace api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto stockDto)
         {
-            var existingStock = await _context.Stocks.FirstOrDefaultAsync(s => s.Id == id);
+            var existingStock = await _stockRepository.UpdateAsync(id, stockDto);
             if (existingStock == null)
             {
                 return NotFound();
             }
-
-            existingStock.Symbol = stockDto.Symbol;
-            existingStock.CompanyName = stockDto.CompanyName;
-            existingStock.Purchase = stockDto.Purchase;
-            existingStock.LastDiv = stockDto.LastDiv;
-            existingStock.Industry = stockDto.Industry;
-            existingStock.MarketCap = stockDto.MarketCap;
-            await _context.SaveChangesAsync();
 
             return Ok(existingStock.ToStockDto());
         }
@@ -79,14 +61,11 @@ namespace api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var existingStock = await _context.Stocks.FirstOrDefaultAsync(s => s.Id == id);
+            var existingStock = await _stockRepository.DeleteAsync(id);
             if (existingStock == null)
             {
                 return NotFound();
             }
-
-            _context.Stocks.Remove(existingStock);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }
