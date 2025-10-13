@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using api.Dto.Comment;
 using api.Interfaces;
 using api.Mappers;
 using api.Models;
@@ -39,6 +40,19 @@ namespace api.Controllers
             }
 
             return Ok(comment.ToCommentDto());
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateCommentRequestDto commentDto)
+        {
+            var existingComment = await _commentRepository.UpdateAsync(id, commentDto);
+
+            if (existingComment == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(existingComment.ToCommentDto());
         }
     }
 }
