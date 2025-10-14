@@ -14,9 +14,11 @@ namespace api.Controllers
     [ApiController]
     public class CommentController : ControllerBase
     {
+        private readonly IStockRepository _stockRepository;
         private readonly ICommentRepository _commentRepository;
-        public CommentController(ICommentRepository commentRepository)
+        public CommentController(ICommentRepository commentRepository, IStockRepository stockRepository)
         {
+            _stockRepository = stockRepository;
             _commentRepository = commentRepository;
         }
 
@@ -40,6 +42,22 @@ namespace api.Controllers
             }
 
             return Ok(comment.ToCommentDto());
+        }
+
+        [HttpPost("{stockId}")]
+        public async Task<IActionResult> Create([FromRoute] int stockId, [FromBody] CreateCommentRequestDto commentDto)
+        {
+            var isStockExist = await _stockRepository.IsStockExist(stockId);
+
+            if (!isStockExist)
+            {
+                return BadRequest($"Stock with id: {stockId} dose not exist.");
+            }
+
+            var commentModel = commentDto.ToCommentFromCreate(stockId);
+            await _commentRepository.CreateAsync(commentModel);
+
+            return CreatedAtAction(nameof(GetById), new { id = commentModel.Id }, commentModel.ToCommentDto());
         }
 
         [HttpPut("{id}")]

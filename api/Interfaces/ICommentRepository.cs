@@ -11,6 +11,7 @@ namespace api.Interfaces
     {
         Task<List<Comment>> GetAllAsync();
         Task<Comment?> GetOneAsync(int id);
-        Task<Comment?> UpdateAsync(int id, UpdateCommentRequestDto commentDto);
+        Task<Comment?> CreateAsync(Comment commentModel);
+        Task<Comment> UpdateAsync(int id, UpdateCommentRequestDto commentDto);
     }
 }
